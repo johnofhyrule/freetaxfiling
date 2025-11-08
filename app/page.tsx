@@ -29,11 +29,13 @@ export default function Home() {
             </h2>
 
             {/* Subheadline */}
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600 sm:text-xl">
-              Answer a few quick questions and we'll match you with the best
-              IRS Free File partner for your situation. No hidden fees, no
-              surprises.
-            </p>
+            <div className="mx-auto mt-6 w-full max-w-3xl px-4">
+              <p className="text-lg text-gray-600 sm:text-xl">
+                Answer a few quick questions and we'll match you with the best
+                IRS Free File partner for your situation. No hidden fees, no
+                surprises.
+              </p>
+            </div>
 
             {/* CTA Button */}
             <div className="mt-10">

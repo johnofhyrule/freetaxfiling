@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   description: "Find truly free tax filing options. Compare IRS Free File partners and get matched with the best option for your situation.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
