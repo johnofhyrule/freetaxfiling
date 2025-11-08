@@ -24,6 +24,7 @@ export function matchPartnersToUser(
 
 /**
  * Calculate match score for a single partner
+ * Starts at 100 and deducts points for unmet requirements
  */
 function calculateMatchScore(
   partner: Partner,
@@ -35,7 +36,7 @@ function calculateMatchScore(
     disqualified: [] as string[],
   };
 
-  let score = 0;
+  let score = 100; // Start at perfect match
   let isEligible = true;
 
   // Check AGI eligibility (hard requirement)
@@ -48,10 +49,16 @@ function calculateMatchScore(
     reasons.eligible.push(
       `Within AGI limit ($${partner.maxAGI.toLocaleString()})`
     );
-    // Score higher for partners with more headroom
+    // Deduct if close to the AGI limit (less headroom)
     const agiHeadroom = partner.maxAGI - userProfile.agi;
     const agiHeadroomPercent = (agiHeadroom / partner.maxAGI) * 100;
-    score += Math.min(agiHeadroomPercent / 10, 10); // Max 10 points
+    if (agiHeadroomPercent < 20) {
+      // If within 20% of limit, deduct up to 10 points
+      score -= Math.max(0, 10 - (agiHeadroomPercent / 2));
+      reasons.warnings.push(
+        `Close to AGI limit (${Math.round(100 - agiHeadroomPercent)}% of maximum)`
+      );
+    }
   }
 
   // Check age requirements
@@ -69,7 +76,6 @@ function calculateMatchScore(
     } else {
       if (partner.minAge || partner.maxAge) {
         reasons.eligible.push("Meets age requirements");
-        score += 5;
       }
     }
   }
@@ -80,7 +86,6 @@ function calculateMatchScore(
     reasons.disqualified.push("This option is only available to military members");
   } else if (partner.militaryOnly && userProfile.isMilitary) {
     reasons.eligible.push("Military-only option (you qualify)");
-    score += 15; // High bonus for military-specific options
   }
 
   // Check state restrictions
@@ -100,25 +105,22 @@ function calculateMatchScore(
       );
     } else {
       reasons.eligible.push(`Available in ${userProfile.state}`);
-      score += 5;
     }
   } else {
     reasons.eligible.push(`Available in ${userProfile.state}`);
-    score += 5;
   }
 
-  // Check state tax return support
+  // Check state tax return support (CRITICAL - 20 point deduction if missing)
   if (userProfile.needsStateTaxReturn) {
     if (partner.supportedForms.state) {
       reasons.eligible.push("Supports state returns");
-      score += 10;
     } else {
       reasons.warnings.push("Does not support state returns");
-      score -= 15; // Penalty if they need state but partner doesn't offer
+      score -= 20; // Major deduction - this is a critical need
     }
   }
 
-  // Check schedule support
+  // Check schedule support (5 points per missing schedule)
   if (userProfile.hasSchedules.length > 0) {
     const unsupportedSchedules = userProfile.hasSchedules.filter(
       (schedule) => !partner.supportedForms.schedules.includes(schedule)
@@ -126,93 +128,92 @@ function calculateMatchScore(
 
     if (unsupportedSchedules.length === 0) {
       reasons.eligible.push("Supports all needed tax schedules");
-      score += 10;
     } else {
       reasons.warnings.push(
         `May not support: ${unsupportedSchedules.map((s) => `Schedule ${s}`).join(", ")}`
       );
-      score -= unsupportedSchedules.length * 5; // Penalty per missing schedule
+      score -= unsupportedSchedules.length * 8; // 8 points per missing schedule
     }
   }
 
-  // Check prior year return support
+  // Check prior year return support (15 point deduction if needed but missing)
   if (userProfile.needsPriorYearReturn) {
     if (partner.features.priorYearReturns) {
       reasons.eligible.push("Supports prior year returns");
-      score += 10;
     } else {
       reasons.warnings.push("Does not support prior year returns");
-      score -= 10;
+      score -= 15;
     }
   }
 
-  // Check special eligibility matches
-  if (userProfile.isMilitary && partner.specialEligibility?.military) {
-    reasons.eligible.push("Military-friendly features");
-    score += 10;
+  // Check special eligibility matches (10 point deduction each if you qualify but partner doesn't offer)
+  if (userProfile.isMilitary) {
+    if (partner.specialEligibility?.military) {
+      reasons.eligible.push("Military-friendly features");
+    } else {
+      score -= 5; // Minor deduction - nice to have
+    }
   }
 
-  if (userProfile.isStudent && partner.specialEligibility?.students) {
-    reasons.eligible.push("Student-friendly features");
-    score += 8;
+  if (userProfile.isStudent) {
+    if (partner.specialEligibility?.students) {
+      reasons.eligible.push("Student-friendly features");
+    } else {
+      score -= 5;
+    }
   }
 
-  if (userProfile.hasDisability && partner.specialEligibility?.disabilities) {
-    reasons.eligible.push("Disability support features");
-    score += 8;
+  if (userProfile.hasDisability) {
+    if (partner.specialEligibility?.disabilities) {
+      reasons.eligible.push("Disability support features");
+    } else {
+      score -= 5;
+    }
   }
 
-  if (
-    userProfile.age &&
-    userProfile.age >= 55 &&
-    partner.specialEligibility?.seniorCitizens
-  ) {
-    reasons.eligible.push("Senior citizen features");
-    score += 8;
+  if (userProfile.age && userProfile.age >= 55) {
+    if (partner.specialEligibility?.seniorCitizens) {
+      reasons.eligible.push("Senior citizen features");
+    } else {
+      score -= 5;
+    }
   }
 
-  // Check preference matches (bonus points, not requirements)
+  // Check preference matches (smaller deductions - these are preferences, not needs)
   if (userProfile.preferSpanish) {
     if (partner.features.spanishLanguage) {
       reasons.eligible.push("Spanish language available");
-      score += 8;
     } else {
       reasons.warnings.push("No Spanish language support");
-      score -= 3;
+      score -= 10; // Moderate deduction for language preference
     }
   }
 
   if (userProfile.wantsLiveSupport) {
     if (partner.features.liveSupport) {
       reasons.eligible.push("Live customer support available");
-      score += 6;
     } else {
       reasons.warnings.push("No live support");
-      score -= 2;
+      score -= 8;
     }
   }
 
   if (userProfile.wantsMobileApp) {
     if (partner.features.mobileApp) {
       reasons.eligible.push("Mobile app available");
-      score += 6;
     } else {
       reasons.warnings.push("No mobile app");
-      score -= 2;
+      score -= 5;
     }
   }
 
-  // Additional feature bonuses
+  // Additional feature bonus (add to eligible list, but don't penalize if missing)
   if (partner.features.importW2) {
     reasons.eligible.push("Can import W-2 data");
-    score += 3;
   }
 
-  // Ensure score is not negative
-  score = Math.max(0, score);
-
-  // Cap score at 100
-  score = Math.min(100, score);
+  // Ensure score stays within 0-100 range
+  score = Math.max(0, Math.min(100, score));
 
   return {
     partner,

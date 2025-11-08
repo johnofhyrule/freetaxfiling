@@ -35,13 +35,22 @@ export const eligibilityFormSchema = z.object({
     .max(1000000, "AGI seems unusually high"),
 
   // Personal info
-  age: z
-    .number({
-      invalid_type_error: "Please enter a valid age",
-    })
-    .min(16, "Must be at least 16 years old")
-    .max(120, "Please enter a valid age")
-    .optional(),
+  age: z.preprocess(
+    (val) => {
+      // Convert empty string or NaN to undefined
+      if (val === "" || val === null || (typeof val === "number" && isNaN(val))) {
+        return undefined;
+      }
+      return val;
+    },
+    z
+      .number({
+        invalid_type_error: "Please enter a valid age",
+      })
+      .min(16, "Must be at least 16 years old")
+      .max(120, "Please enter a valid age")
+      .optional()
+  ),
 
   state: z.enum(US_STATES, {
     required_error: "Please select your state",
