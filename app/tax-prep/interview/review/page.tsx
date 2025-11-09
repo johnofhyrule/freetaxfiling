@@ -153,14 +153,15 @@ export default function ReviewPage() {
     if (!taxReturn) return;
 
     // Mark as complete
-    taxReturn.progress.completedSections.push("review");
+    if (!taxReturn.progress.completedSections.includes("review")) {
+      taxReturn.progress.completedSections.push("review");
+    }
     taxReturn.progress.currentStep = 7;
 
     saveTaxReturn(taxReturn);
 
-    // Navigate to completion/PDF page
-    alert("Tax return complete! PDF generation feature coming soon.");
-    router.push("/tax-prep");
+    // Navigate to PDF download page
+    router.push("/tax-prep/download");
   };
 
   if (loading) {
