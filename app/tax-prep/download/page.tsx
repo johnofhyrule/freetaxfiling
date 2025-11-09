@@ -101,10 +101,10 @@ export default function DownloadPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="text-center">
-          {/* Success Icon */}
+        {/* Success Icon */}
+        <div className="flex justify-center">
           {!pdfGenerated && (
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
               <svg
                 className="h-10 w-10 text-success"
                 fill="none"
@@ -122,7 +122,7 @@ export default function DownloadPage() {
           )}
 
           {pdfGenerated && (
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
               <svg
                 className="h-10 w-10 text-primary"
                 fill="none"
@@ -138,19 +138,17 @@ export default function DownloadPage() {
               </svg>
             </div>
           )}
-
-          <h1 className="text-3xl font-bold text-foreground">
-            {pdfGenerated ? "PDF Ready!" : "Your Return is Complete"}
-          </h1>
-
-          <div className="mx-auto mt-4 w-full max-w-2xl px-4">
-            <p className="text-lg text-gray-600">
-              {pdfGenerated
-                ? "Your tax return PDF has been generated. You can download it again or print it."
-                : "Generate your Form 1040 PDF to print and mail to the IRS."}
-            </p>
-          </div>
         </div>
+
+        <h1 className="text-center text-3xl font-bold text-foreground">
+          {pdfGenerated ? "PDF Ready!" : "Your Return is Complete"}
+        </h1>
+
+        <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-gray-600">
+          {pdfGenerated
+            ? "Your tax return PDF has been generated. You can download it again or print it."
+            : "Generate your Form 1040 PDF to print and mail to the IRS."}
+        </p>
 
         {/* Error Message */}
         {error && (
@@ -164,7 +162,7 @@ export default function DownloadPage() {
           <button
             onClick={handleDownloadPDF}
             disabled={loading}
-            className="flex w-full max-w-md items-center justify-center gap-3 whitespace-nowrap rounded-lg bg-secondary px-8 py-4 text-lg font-semibold text-white transition-all hover:bg-secondary/90 hover:shadow-lg disabled:opacity-50 sm:w-auto"
+            className="flex min-w-[200px] items-center justify-center gap-3 whitespace-nowrap rounded-lg bg-secondary px-8 py-4 text-lg font-semibold text-white transition-all hover:bg-secondary/90 hover:shadow-lg disabled:opacity-50"
           >
             {loading ? (
               <>
@@ -212,7 +210,7 @@ export default function DownloadPage() {
           <button
             onClick={handlePreviewPDF}
             disabled={loading}
-            className="flex w-full max-w-md items-center justify-center gap-3 whitespace-nowrap rounded-lg border-2 border-primary px-8 py-4 text-lg font-semibold text-primary transition-all hover:bg-primary/10 disabled:opacity-50 sm:w-auto"
+            className="flex min-w-[200px] items-center justify-center gap-3 whitespace-nowrap rounded-lg border-2 border-primary px-8 py-4 text-lg font-semibold text-primary transition-all hover:bg-primary/10 disabled:opacity-50"
           >
             <svg
               className="h-5 w-5"
