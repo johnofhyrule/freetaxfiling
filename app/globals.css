@@ -6,6 +6,8 @@
   /* Brand colors */
   --trust-blue: #1d4ed8;
   --action-orange: #ea580c;
+  --success-green: #059669;
+  --activism-purple: #7c3aed;
 }
 
 @theme inline {
@@ -16,6 +18,8 @@
   /* Brand colors */
   --color-trust: var(--trust-blue);
   --color-action: var(--action-orange);
+  --color-success: var(--success-green);
+  --color-activism: var(--activism-purple);
 
   /* Semantic aliases for easier use */
   --color-primary: var(--trust-blue);

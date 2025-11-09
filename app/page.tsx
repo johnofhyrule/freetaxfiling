@@ -1,6 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { FEATURES } from "@/lib/feature-flags";
 
 export default function Home() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -46,6 +55,18 @@ export default function Home() {
                 Find Your Free Filing Option →
               </Link>
             </div>
+
+            {/* Tax Prep Assistant CTA (Feature Flag) */}
+            {FEATURES.TAX_PREP && (
+              <div className="mt-6">
+                <Link
+                  href="/tax-prep"
+                  className="inline-block text-primary hover:underline"
+                >
+                  Or prepare your own taxes with our Tax Prep Assistant →
+                </Link>
+              </div>
+            )}
 
             {/* Trust Indicators */}
             <div className="mt-12 flex flex-col items-center justify-center gap-6 text-sm text-gray-500 sm:flex-row sm:gap-8">
@@ -119,6 +140,68 @@ export default function Home() {
                   partner. 100% free.
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section - Basecamp Style Collapsible */}
+        <div className="border-t border-gray-200 bg-white py-20">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <h3 className="mb-16 text-3xl font-bold text-foreground">
+              Questions & Answers
+            </h3>
+            <div className="divide-y divide-gray-200">
+              {[
+                {
+                  q: "What is IRS Free File?",
+                  a: "IRS Free File is a partnership between the IRS and tax software companies that offers free federal and state tax preparation for eligible taxpayers. If you meet certain income requirements, you can file your taxes completely free using brand-name tax software."
+                },
+                {
+                  q: "Is this really 100% free?",
+                  a: "Yes! If you qualify for a partner based on your AGI and other requirements, both federal and state returns are completely free. There are no hidden fees, upgrade prompts, or surprise charges. However, each partner has specific eligibility requirements, which is why we help you find the right match."
+                },
+                {
+                  q: "How does the matching work?",
+                  a: "We ask about your income, age, state, tax situation, and preferences. Our algorithm compares these against the eligibility requirements of all 8 Free File partners and shows you which ones you qualify for, ranked by how well they match your needs. You'll see a match score (0-100%) for each eligible partner."
+                },
+                {
+                  q: "What if my income is too high?",
+                  a: "Free File partners typically have AGI limits ranging from $35,000 to $79,000. If your income exceeds these limits, you won't qualify for Free File, but you may still be eligible for IRS Free File Fillable Forms (basic online forms) or commercial tax software with paid options."
+                },
+                {
+                  q: "Do you store my tax information?",
+                  a: "No. We only use your information to match you with partners. All data is stored temporarily in your browser and is never sent to our servers. When you click through to a partner, you'll create an account directly with them."
+                },
+                {
+                  q: "Can I file previous years' tax returns?",
+                  a: "Some Free File partners support prior year returns, while others only support the current tax year. Our matcher will show you which partners offer this feature if you indicate you need it. Check the partner's specific offerings for details on which years are supported."
+                },
+                {
+                  q: "What's the difference between partners?",
+                  a: "Each partner has different AGI limits, supported tax forms, features (like Spanish language support or mobile apps), and age restrictions. Some specialize in military members, students, or seniors. Our tool helps you understand these differences and find the best fit for your specific situation."
+                }
+              ].map((faq, index) => (
+                <div key={index} className="py-8">
+                  <button
+                    onClick={() => toggleFaq(index)}
+                    className="flex w-full items-start justify-between text-left"
+                  >
+                    <h4 className="pr-8 text-xl font-bold text-foreground">
+                      {faq.q}
+                    </h4>
+                    <span className="flex-shrink-0 text-2xl font-light text-gray-400">
+                      {openFaq === index ? "−" : "+"}
+                    </span>
+                  </button>
+                  {openFaq === index && (
+                    <div className="mt-4 pr-12">
+                      <p className="text-lg leading-relaxed text-gray-700">
+                        {faq.a}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
