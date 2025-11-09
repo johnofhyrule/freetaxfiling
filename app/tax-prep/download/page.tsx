@@ -143,11 +143,13 @@ export default function DownloadPage() {
             {pdfGenerated ? "PDF Ready!" : "Your Return is Complete"}
           </h1>
 
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
-            {pdfGenerated
-              ? "Your tax return PDF has been generated. You can download it again or print it."
-              : "Generate your Form 1040 PDF to print and mail to the IRS."}
-          </p>
+          <div className="mx-auto mt-4 w-full max-w-2xl px-4">
+            <p className="text-lg text-gray-600">
+              {pdfGenerated
+                ? "Your tax return PDF has been generated. You can download it again or print it."
+                : "Generate your Form 1040 PDF to print and mail to the IRS."}
+            </p>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -162,7 +164,7 @@ export default function DownloadPage() {
           <button
             onClick={handleDownloadPDF}
             disabled={loading}
-            className="flex w-full max-w-md items-center justify-center gap-3 rounded-lg bg-secondary px-8 py-4 text-lg font-semibold text-white transition-all hover:bg-secondary/90 hover:shadow-lg disabled:opacity-50 sm:w-auto"
+            className="flex w-full max-w-md items-center justify-center gap-3 whitespace-nowrap rounded-lg bg-secondary px-8 py-4 text-lg font-semibold text-white transition-all hover:bg-secondary/90 hover:shadow-lg disabled:opacity-50 sm:w-auto"
           >
             {loading ? (
               <>
@@ -210,7 +212,7 @@ export default function DownloadPage() {
           <button
             onClick={handlePreviewPDF}
             disabled={loading}
-            className="flex w-full max-w-md items-center justify-center gap-3 rounded-lg border-2 border-primary px-8 py-4 text-lg font-semibold text-primary transition-all hover:bg-primary/10 disabled:opacity-50 sm:w-auto"
+            className="flex w-full max-w-md items-center justify-center gap-3 whitespace-nowrap rounded-lg border-2 border-primary px-8 py-4 text-lg font-semibold text-primary transition-all hover:bg-primary/10 disabled:opacity-50 sm:w-auto"
           >
             <svg
               className="h-5 w-5"
