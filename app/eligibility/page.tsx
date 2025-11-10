@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import Link from "next/link";
 import {
   eligibilityFormSchema,
@@ -10,6 +11,7 @@ import {
   US_STATES,
   TAX_SCHEDULES,
 } from "@/lib/schemas";
+import { trackEvent } from "@/lib/analytics";
 
 export default function EligibilityPage() {
   const router = useRouter();
@@ -31,6 +33,11 @@ export default function EligibilityPage() {
       wantsMobileApp: false,
     },
   });
+
+  // Track when user starts eligibility form
+  useEffect(() => {
+    trackEvent({ type: 'eligibility_started' });
+  }, []);
 
   const onSubmit = (data: EligibilityFormData) => {
     // Store form data in sessionStorage

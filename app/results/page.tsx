@@ -7,6 +7,7 @@ import { EligibilityFormData } from "@/lib/schemas";
 import { UserProfile, MatchScore } from "@/lib/types";
 import { getAllPartners } from "@/lib/data/partners";
 import { matchPartnersToUser, getEligibleMatches } from "@/lib/matching";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -48,9 +49,25 @@ export default function ResultsPage() {
     // Run matching algorithm
     const partners = getAllPartners();
     const matchResults = matchPartnersToUser(partners, profile);
+    const eligibleMatches = getEligibleMatches(matchResults);
+
+    // Track eligibility completion with number of matches
+    trackEvent({
+      type: 'eligibility_completed',
+      matches: eligibleMatches.length
+    });
+
     setMatches(matchResults);
     setIsLoading(false);
   }, [router]);
+
+  const handlePartnerClick = (partnerName: string, rank: number) => {
+    trackEvent({
+      type: 'partner_clicked',
+      partner: partnerName,
+      rank: rank,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -142,6 +159,7 @@ export default function ResultsPage() {
                   href={topMatch.partner.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => handlePartnerClick(topMatch.partner.name, 1)}
                   className="inline-block rounded-lg bg-secondary px-6 py-3 font-semibold text-white hover:bg-secondary/90"
                 >
                   Start Filing with {topMatch.partner.name} →
@@ -155,7 +173,7 @@ export default function ResultsPage() {
                 All Your Options
               </h3>
               <div className="grid gap-6 lg:grid-cols-2">
-                {eligibleMatches.map((match) => (
+                {eligibleMatches.map((match, index) => (
                   <div
                     key={match.partner.id}
                     className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
@@ -239,6 +257,7 @@ export default function ResultsPage() {
                       href={match.partner.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => handlePartnerClick(match.partner.name, index + 1)}
                       className="block w-full rounded-lg border-2 border-primary bg-white py-2 text-center font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
                     >
                       Visit {match.partner.name} →

@@ -12,6 +12,7 @@ import {
   isStorageAvailable,
 } from "@/lib/tax-prep/storage";
 import { TaxYear, FilingStatus } from "@/lib/tax-prep/types";
+import { trackEvent } from "@/lib/analytics";
 
 const TAX_YEARS: TaxYear[] = [2025, 2024, 2023, 2022];
 
@@ -81,6 +82,13 @@ export default function StartTaxPrepPage() {
     // Initialize new return
     const newReturn = initializeTaxReturn(taxYear, filingStatus);
     saveTaxReturn(newReturn);
+
+    // Track tax prep start
+    trackEvent({
+      type: 'tax_prep_started',
+      year: taxYear,
+      filingStatus: filingStatus,
+    });
 
     // Navigate to first step
     router.push("/tax-prep/interview/basic-info");

@@ -12,16 +12,16 @@ import {
 import { STANDARD_DEDUCTIONS_2024, STANDARD_DEDUCTIONS_2023 } from "@/lib/tax-prep/types";
 
 const itemizedDeductionsSchema = z.object({
-  medicalExpenses: z.number().min(0).default(0),
-  stateIncomeTax: z.number().min(0).default(0),
-  realEstateTax: z.number().min(0).default(0),
-  personalPropertyTax: z.number().min(0).default(0),
-  mortgageInterest: z.number().min(0).default(0),
-  mortgagePoints: z.number().min(0).default(0),
-  mortgageInsurance: z.number().min(0).default(0),
-  cashContributions: z.number().min(0).default(0),
-  nonCashContributions: z.number().min(0).default(0),
-  casualtyLosses: z.number().min(0).default(0),
+  medicalExpenses: z.number().min(0),
+  stateIncomeTax: z.number().min(0),
+  realEstateTax: z.number().min(0),
+  personalPropertyTax: z.number().min(0),
+  mortgageInterest: z.number().min(0),
+  mortgagePoints: z.number().min(0),
+  mortgageInsurance: z.number().min(0),
+  cashContributions: z.number().min(0),
+  nonCashContributions: z.number().min(0),
+  casualtyLosses: z.number().min(0),
 });
 
 type ItemizedDeductionsFormData = z.infer<typeof itemizedDeductionsSchema>;

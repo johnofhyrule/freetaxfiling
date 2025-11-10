@@ -1,7 +1,7 @@
 # Development Handoff Notes
 
-**Last Updated:** 2025-11-09
-**Current Status:** Tax Prep Assistant (PRD 2) - All core features complete
+**Last Updated:** 2025-11-10
+**Current Status:** Tax Prep Assistant (PRD 2) - 100% Complete | Document Upload/OCR - Complete ✅
 **Dev Server:** Running on localhost:3001
 
 ---
@@ -170,104 +170,124 @@ npm run dev
 4. ✅ Created W-2 parser with enhanced regex patterns
 5. ✅ Auto-fill all W-2 form fields with extracted data
 6. ✅ User review/edit capability with helpful feedback
-7. ✅ Created parsers for 1099 forms (INT, DIV, MISC) - ready for integration
+7. ✅ Created and integrated parsers for 1099 forms (INT, DIV, MISC) - fully functional
 8. ✅ Improved OCR accuracy with error correction for common mistakes
 9. ✅ Added user feedback, tooltips, and time-saving indicators
+10. ✅ Integrated OCR upload UI into all 1099 form types (INT, DIV, MISC)
 
 **Files Created:**
 - `lib/tax-prep/ocr.ts` - OCR processing utilities with Tesseract.js
 - `lib/tax-prep/parsers/w2-parser.ts` - W-2 text parsing with enhanced regex
-- `lib/tax-prep/parsers/1099-int-parser.ts` - 1099-INT parser (ready for integration)
-- `lib/tax-prep/parsers/1099-div-parser.ts` - 1099-DIV parser (ready for integration)
-- `lib/tax-prep/parsers/1099-misc-parser.ts` - 1099-MISC/NEC parser (ready for integration)
+- `lib/tax-prep/parsers/1099-int-parser.ts` - 1099-INT parser (fully integrated)
+- `lib/tax-prep/parsers/1099-div-parser.ts` - 1099-DIV parser (fully integrated)
+- `lib/tax-prep/parsers/1099-misc-parser.ts` - 1099-MISC/NEC parser (fully integrated)
 
 **Files Modified:**
 - `app/tax-prep/interview/w2-income/page.tsx` - Added OCR upload UI with preview and feedback
+- `app/tax-prep/interview/1099-income/page.tsx` - Integrated OCR upload for all 1099 form types
 - `package.json` - Added tesseract.js dependency, set dev port to 3001
 
-**Next Step:** Integrate 1099 parsers into the 1099-income page (parsers are ready to use)
+---
+
+### ✅ **Priority 2: Improve Tax Calculations - COMPLETED**
+**Impact: MEDIUM-HIGH** | **Effort: MEDIUM** | **Status: Done**
+
+**What was built:**
+1. ✅ Tax brackets for ALL filing statuses (single, married joint/separate, HOH, qualifying widow)
+2. ✅ Self-employment tax calculation (15.3% SE tax with employer-equivalent deduction)
+3. ✅ Earned Income Credit (EIC) with phase-in and phase-out
+4. ✅ Alternative Minimum Tax (AMT) with exemptions and phase-outs
+5. ✅ Child and Dependent Care Credit (20-35% sliding scale)
+6. ✅ American Opportunity Tax Credit (AOTC) with AGI phase-out
+7. ✅ Lifetime Learning Credit with AGI phase-out
+8. ✅ Additional Child Tax Credit (refundable portion)
+
+**Files Created:**
+- `lib/tax-prep/tax-calculator.ts` - Comprehensive tax calculation utilities
+
+**Files Modified:**
+- `app/tax-prep/interview/review/page.tsx` - Integrated all new tax calculations
+
+**Commits:**
+- `a388b1b` - Implement comprehensive tax calculations for all filing statuses
+- `135c17a` - Add complete tax calculation suite: all years, credits, and AMT
 
 ---
 
-### **Priority 2: Improve Tax Calculations**
-**Impact: MEDIUM-HIGH** | **Effort: MEDIUM**
+### ✅ **Priority 4: Prior Year Support - COMPLETED**
+**Impact: MEDIUM** | **Effort: LOW-MEDIUM** | **Status: Done**
 
-**Missing Features:**
-1. Tax brackets for all filing statuses (currently only single)
-2. Self-employment tax calculation (15.3% SE tax)
-3. Earned Income Credit (EIC)
-4. Alternative Minimum Tax (AMT)
-5. More accurate credit calculations
-
-**Files to Modify:**
-- `app/tax-prep/interview/review/page.tsx`
-- `lib/tax-prep/pdf-generator.ts`
-- `lib/tax-prep/types.ts` (add new calculation types)
-
----
-
-### **Priority 3: Privacy-First Analytics**
-**Impact: HIGH** | **Effort: LOW** | **Status: Not started**
-
-**Goal:** Track user behavior and feature adoption while maintaining privacy commitment
-
-**What to Track:**
-- Page views, unique visitors, user flow
-- Free File partner clicks and rankings
-- Tax prep tool usage (starts, completions, drop-off points)
-- OCR feature adoption and success rates
-- Feature usage (standard vs itemized, income types)
-- Which tax years users select
-
-**What NOT to Track:**
-- ❌ Actual tax data (SSNs, income amounts, names)
-- ❌ Form field values or localStorage data
-- ❌ Personally identifiable information
-
-**Recommended Solutions:**
-1. **Plausible** - Privacy-first, no cookies, GDPR compliant (~$9-19/month)
-2. **Fathom** - Similar to Plausible, privacy-focused
-3. **PostHog** - Product analytics + feature flags, self-hostable
-4. **Google Analytics 4** - Free but needs careful privacy configuration
-
-**Implementation:**
-- Add analytics script to `app/layout.tsx`
-- Create `lib/analytics.ts` utility for event tracking
-- Track anonymous events (e.g., "user_clicked_partner", "ocr_upload_success")
-- Use bucketed ranges instead of exact values (AGI: 30k-40k vs exact)
-- Update privacy page to mention analytics
-
-**Example Events:**
-```typescript
-analytics.track('user_clicked_free_file_partner', {
-  partner_name: 'TaxSlayer',
-  partner_rank: 1,
-  user_agi_range: '30000-40000',
-});
-analytics.track('ocr_upload_attempted', {
-  form_type: 'w2',
-  success: true,
-});
-```
-
----
-
-### **Priority 4: Prior Year Support**
-**Impact: MEDIUM** | **Effort: LOW-MEDIUM** | **Status: Partially done**
-
-**Current Status:**
-- ✅ Tax years 2025, 2024, 2023, 2022 supported
+**What was built:**
+- ✅ Tax years 2025, 2024, 2023, 2022 fully supported
 - ✅ Standard deductions for all 4 years
-- ⚠️ Tax brackets only for 2024 (single filers)
+- ✅ Tax brackets for all 4 years and all filing statuses
+- ✅ Year-specific credit calculations
 
-**Remaining Work:**
-- Add 2025, 2023, 2022 tax brackets for all filing statuses
-- Add year-specific rules and limits
-- Year-specific credit amounts (Child Tax Credit, etc.)
+**Files Modified:**
+- `lib/tax-prep/tax-calculator.ts` - Year-based tax bracket calculations for all years
 
-**Files to Modify:**
-- `app/tax-prep/interview/review/page.tsx` - Year-based tax bracket calculations
-- `lib/tax-prep/pdf-generator.ts` - Year-based PDF generation
+---
+
+### ✅ **Priority 3: Privacy-First Analytics - COMPLETED**
+**Impact: HIGH** | **Effort: LOW** | **Status: Done**
+
+**What was built:**
+- ✅ Fathom Analytics integration (privacy-first, no cookies, GDPR compliant)
+- ✅ Type-safe analytics utility with comprehensive event tracking
+- ✅ Automatic page view tracking for SPA navigation
+- ✅ Event tracking for Free File Navigator (eligibility, partner clicks)
+- ✅ Event tracking for Tax Prep Assistant (starts, completions, downloads)
+- ✅ Privacy-compliant design (no PII, no actual tax data)
+- ✅ Easy activation via environment variable
+
+**Files Created:**
+- `lib/analytics.ts` - Privacy-first analytics utility with type-safe event tracking
+- `components/analytics/fathom-analytics.tsx` - Fathom script loader component
+
+**Files Modified:**
+- `app/layout.tsx` - Added Fathom Analytics component
+- `app/eligibility/page.tsx` - Track eligibility form starts
+- `app/results/page.tsx` - Track eligibility completions and partner clicks
+- `app/tax-prep/start/page.tsx` - Track tax prep starts
+- `app/tax-prep/interview/review/page.tsx` - Track tax prep completions
+- `app/tax-prep/download/page.tsx` - Track PDF downloads
+- `.env.example` - Added NEXT_PUBLIC_FATHOM_SITE_ID configuration
+
+**Events Being Tracked:**
+1. **Free File Navigator:**
+   - `eligibility_started` - User begins eligibility form
+   - `eligibility_completed` - Form submitted with number of matches
+   - `partner_clicked` - User clicks partner link (partner name + rank)
+
+2. **Tax Prep Assistant:**
+   - `tax_prep_started` - User starts new tax return (year + filing status)
+   - `tax_prep_completed` - User reaches review page (year + has refund)
+   - `pdf_downloaded` - User downloads Form 1040 PDF (year)
+
+3. **OCR (ready for integration):**
+   - `ocr_upload_started` - User starts upload (form type)
+   - `ocr_upload_success` - Upload succeeds (form type)
+   - `ocr_upload_failed` - Upload fails (form type)
+
+**Privacy Compliance:**
+- ✅ No cookies or localStorage from analytics
+- ✅ No PII tracked (names, SSNs, addresses)
+- ✅ No actual tax data (income amounts, deductions)
+- ✅ Anonymous behavioral events only
+- ✅ Honors Do Not Track browser setting
+- ✅ EU data hosting via Fathom
+
+**How to Activate:**
+1. Sign up for Fathom Analytics at https://usefathom.com
+2. Create a new site and get your Site ID
+3. Add to `.env.local`:
+   ```bash
+   NEXT_PUBLIC_FATHOM_SITE_ID=your-site-id-here
+   ```
+4. Restart dev server - analytics will automatically start tracking
+5. View dashboard at https://app.usefathom.com
+
+**Cost:** ~$14/month for up to 100k pageviews (Fathom pricing)
 
 ---
 
@@ -289,14 +309,19 @@ analytics.track('ocr_upload_attempted', {
 - **Development:** Currently `true` in `.env.local`
 - File: `.env.local` (gitignored), `.env.example` (committed)
 
-### Tax Calculation (Current Limitations)
-- ✅ Uses 2024 tax brackets for single filers
-- ⚠️ Other filing statuses use simplified 22% rate (placeholder)
+### Tax Calculation (Production Ready)
+- ✅ Tax brackets for ALL years (2022-2025) and ALL filing statuses
+- ✅ Progressive tax calculation using actual IRS brackets
+- ✅ Self-employment tax (15.3% with employer-equivalent deduction)
+- ✅ Earned Income Credit with phase-in/phase-out
+- ✅ Alternative Minimum Tax (AMT) calculation
 - ✅ SALT deduction capped at $10,000
-- ✅ Child Tax Credit: $2,000/child under 17
+- ✅ Child Tax Credit: $2,000/child with AGI phase-out
+- ✅ Additional Child Tax Credit (refundable portion)
+- ✅ Child and Dependent Care Credit (20-35% sliding scale)
+- ✅ American Opportunity Tax Credit
+- ✅ Lifetime Learning Credit
 - ✅ Other Dependent Credit: $500/dependent
-- ⚠️ Self-employment tax not yet calculated
-- ⚠️ Earned Income Credit not yet implemented
 
 ### localStorage Keys
 - `tax-prep-returns` - Array of all tax returns
@@ -348,10 +373,12 @@ localStorage.clear()
 ## 📊 Progress Tracking
 
 **Free File Navigator (PRD 1):** 100% complete ✅
-**Tax Prep Assistant (PRD 2):** 95% complete ✅
+**Tax Prep Assistant (PRD 2):** 100% complete ✅
 - Core features: 100% ✅
 - Advanced features: 100% ✅
-- Remaining: Better tax calculations, prior year support
+- Tax calculations: 100% ✅
+- Document upload/OCR: 100% ✅
+- Prior year support: 100% ✅
 
 **State Filing Solution (PRD 3):** 0% (not started)
 **Advocacy Platform (PRD 4):** 0% (not started)
@@ -417,4 +444,4 @@ git log --oneline -5
 
 ---
 
-*Last modified: 2025-11-09 by Claude*
+*Last modified: 2025-11-10 by Claude*

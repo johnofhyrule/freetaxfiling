@@ -11,10 +11,10 @@ import {
 } from "@/lib/tax-prep/storage";
 
 const paymentsSchema = z.object({
-  estimatedPayments: z.number().min(0).default(0),
-  refundAppliedFromPriorYear: z.number().min(0).default(0),
+  estimatedPayments: z.number().min(0),
+  refundAppliedFromPriorYear: z.number().min(0),
   // Bank info for refund
-  wantsDirectDeposit: z.boolean().default(false),
+  wantsDirectDeposit: z.boolean(),
   routingNumber: z.string().optional(),
   accountNumber: z.string().optional(),
   accountType: z.enum(["checking", "savings"]).optional(),

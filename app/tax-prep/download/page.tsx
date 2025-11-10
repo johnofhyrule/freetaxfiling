@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getCurrentTaxReturn } from "@/lib/tax-prep/storage";
 import { generateForm1040PDF } from "@/lib/tax-prep/pdf-generator";
+import { trackEvent } from "@/lib/analytics";
 
 export default function DownloadPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function DownloadPage() {
       const pdfBytes = await generateForm1040PDF(taxReturn);
 
       // Create blob and download
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
 
       const link = document.createElement("a");
@@ -51,6 +52,12 @@ export default function DownloadPage() {
       URL.revokeObjectURL(url);
 
       setPdfGenerated(true);
+
+      // Track PDF download
+      trackEvent({
+        type: 'pdf_downloaded',
+        year: taxReturn.form1040.taxYear,
+      });
     } catch (err) {
       console.error("Error generating PDF:", err);
       setError("Failed to generate PDF. Please try again.");
@@ -73,7 +80,7 @@ export default function DownloadPage() {
       const pdfBytes = await generateForm1040PDF(taxReturn);
 
       // Create blob and open in new tab
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
 
       window.open(url, "_blank");

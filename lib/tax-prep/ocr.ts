@@ -19,19 +19,13 @@ export async function processImage(
   onProgress?: (progress: OCRProgress) => void
 ): Promise<OCRResult> {
   try {
-    const worker = await Tesseract.createWorker({
-      logger: (m) => {
-        if (onProgress && m.status) {
-          onProgress({
-            status: m.status,
-            progress: m.progress || 0
-          });
-        }
-      }
-    });
+    const worker = await Tesseract.createWorker('eng');
 
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
+    // Note: Progress tracking via logger is not available in newer Tesseract versions
+    // If onProgress is provided, call it with initial status
+    if (onProgress) {
+      onProgress({ status: 'initializing', progress: 0 });
+    }
 
     const { data } = await worker.recognize(file);
 

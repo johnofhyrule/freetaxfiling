@@ -11,9 +11,9 @@ import {
 } from "@/lib/tax-prep/storage";
 
 const creditsSchema = z.object({
-  childCareExpenses: z.number().min(0).default(0),
-  educationExpenses: z.number().min(0).default(0),
-  retirementContributions: z.number().min(0).default(0),
+  childCareExpenses: z.number().min(0),
+  educationExpenses: z.number().min(0),
+  retirementContributions: z.number().min(0),
 });
 
 type CreditsFormData = z.infer<typeof creditsSchema>;

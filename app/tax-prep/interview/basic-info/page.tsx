@@ -33,7 +33,7 @@ const basicInfoSchema = z.object({
   address: z.string().min(1, "Address is required"),
   aptUnit: z.string().optional(),
   city: z.string().min(1, "City is required"),
-  state: z.enum(US_STATES, { required_error: "State is required" }),
+  state: z.enum(US_STATES),
   zipCode: z
     .string()
     .regex(/^\d{5}(-\d{4})?$/, "Invalid ZIP code"),

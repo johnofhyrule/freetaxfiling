@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +15,16 @@ import {
   Income1099B,
   Income1099MISC,
 } from "@/lib/tax-prep/types";
+import {
+  processImage,
+  validateImageFile,
+  createImagePreview,
+  revokeImagePreview,
+  type OCRProgress,
+} from "@/lib/tax-prep/ocr";
+import { parse1099INTText, validate1099INT } from "@/lib/tax-prep/parsers/1099-int-parser";
+import { parse1099DIVText, validate1099DIV } from "@/lib/tax-prep/parsers/1099-div-parser";
+import { parse1099MISCText, validate1099MISC } from "@/lib/tax-prep/parsers/1099-misc-parser";
 
 // Validation schemas
 const income1099INTSchema = z.object({
@@ -73,6 +83,13 @@ export default function Income1099Page() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // OCR Upload States
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Forms for each type
   const formINT = useForm<Income1099INTFormData>({
@@ -197,6 +214,109 @@ export default function Income1099Page() {
     }
   };
 
+  // OCR Upload Handler
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Reset states
+    setUploadError(null);
+    setOcrProgress(null);
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setUploadError(validation.error || "Invalid file");
+      return;
+    }
+
+    // Create preview
+    const preview = createImagePreview(file);
+    setPreviewUrl(preview);
+
+    // Process OCR
+    setIsProcessing(true);
+    try {
+      const result = await processImage(file, (progress) => {
+        setOcrProgress(progress);
+      });
+
+      // Parse based on active tab
+      if (activeTab === "INT") {
+        const parsedData = parse1099INTText(result.text);
+        const missingFields = validate1099INT(parsedData);
+
+        if (missingFields.length > 0) {
+          setUploadError(
+            `Could not extract all fields: ${missingFields.join(", ")}. Please review and fill in missing information.`
+          );
+        }
+
+        // Auto-fill INT form
+        if (parsedData.payerName) formINT.setValue("payerName", parsedData.payerName);
+        if (parsedData.payerEIN) formINT.setValue("payerEIN", parsedData.payerEIN);
+        if (parsedData.interestIncome !== undefined) formINT.setValue("interestIncome", parsedData.interestIncome);
+        if (parsedData.earlyWithdrawalPenalty !== undefined) formINT.setValue("earlyWithdrawalPenalty", parsedData.earlyWithdrawalPenalty);
+        if (parsedData.federalTaxWithheld !== undefined) formINT.setValue("federalTaxWithheld", parsedData.federalTaxWithheld);
+      } else if (activeTab === "DIV") {
+        const parsedData = parse1099DIVText(result.text);
+        const missingFields = validate1099DIV(parsedData);
+
+        if (missingFields.length > 0) {
+          setUploadError(
+            `Could not extract all fields: ${missingFields.join(", ")}. Please review and fill in missing information.`
+          );
+        }
+
+        // Auto-fill DIV form
+        if (parsedData.payerName) formDIV.setValue("payerName", parsedData.payerName);
+        if (parsedData.payerEIN) formDIV.setValue("payerEIN", parsedData.payerEIN);
+        if (parsedData.ordinaryDividends !== undefined) formDIV.setValue("ordinaryDividends", parsedData.ordinaryDividends);
+        if (parsedData.qualifiedDividends !== undefined) formDIV.setValue("qualifiedDividends", parsedData.qualifiedDividends);
+        if (parsedData.totalCapitalGainDistributions !== undefined) formDIV.setValue("totalCapitalGainDistributions", parsedData.totalCapitalGainDistributions);
+        if (parsedData.federalTaxWithheld !== undefined) formDIV.setValue("federalTaxWithheld", parsedData.federalTaxWithheld);
+      } else if (activeTab === "MISC") {
+        const parsedData = parse1099MISCText(result.text);
+        const missingFields = validate1099MISC(parsedData);
+
+        if (missingFields.length > 0) {
+          setUploadError(
+            `Could not extract all fields: ${missingFields.join(", ")}. Please review and fill in missing information.`
+          );
+        }
+
+        // Auto-fill MISC form
+        if (parsedData.payerName) formMISC.setValue("payerName", parsedData.payerName);
+        if (parsedData.payerEIN) formMISC.setValue("payerEIN", parsedData.payerEIN);
+        if (parsedData.nonemployeeCompensation !== undefined) formMISC.setValue("nonemployeeCompensation", parsedData.nonemployeeCompensation);
+        if (parsedData.rents !== undefined) formMISC.setValue("rents", parsedData.rents);
+        if (parsedData.royalties !== undefined) formMISC.setValue("royalties", parsedData.royalties);
+        if (parsedData.otherIncome !== undefined) formMISC.setValue("otherIncome", parsedData.otherIncome);
+        if (parsedData.federalTaxWithheld !== undefined) formMISC.setValue("federalTaxWithheld", parsedData.federalTaxWithheld);
+      }
+    } catch (error) {
+      console.error("OCR error:", error);
+      setUploadError(
+        error instanceof Error ? error.message : "Failed to process image. Please enter manually."
+      );
+    } finally {
+      setIsProcessing(false);
+      setOcrProgress(null);
+    }
+  };
+
+  const clearUpload = () => {
+    if (previewUrl) {
+      revokeImagePreview(previewUrl);
+      setPreviewUrl(null);
+    }
+    setUploadError(null);
+    setOcrProgress(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const resetForm = () => {
     setIsAdding(false);
     setEditingId(null);
@@ -204,6 +324,7 @@ export default function Income1099Page() {
     formDIV.reset();
     formB.reset();
     formMISC.reset();
+    clearUpload();
   };
 
   const handleDelete = (type: FormType, id: string) => {
@@ -567,6 +688,98 @@ export default function Income1099Page() {
           <h2 className="mb-4 text-xl font-semibold text-foreground">
             {editingId ? "Edit 1099-INT" : "Add 1099-INT (Interest Income)"}
           </h2>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {/* OCR Upload Section */}
+          {!previewUrl && !editingId && (
+            <div className="mb-6 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 p-6">
+              <div className="text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                <h3 className="mt-2 text-lg font-semibold text-blue-900">
+                  Save 5+ minutes with document upload
+                </h3>
+                <p className="mt-1 text-sm text-blue-700">
+                  Upload a photo of your 1099-INT and we'll automatically fill in the details
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing}
+                  className="mt-4 rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isProcessing ? "Processing..." : "Upload 1099-INT Image"}
+                </button>
+                <p className="mt-2 text-xs text-blue-600">
+                  Supports JPG, PNG, WebP, or PDF (max 10MB) • 100% private, processed on your device
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Image Preview & Processing */}
+          {previewUrl && (
+            <div className="mb-6 rounded-lg border border-gray-300 bg-gray-50 p-4">
+              <div className="flex items-start gap-4">
+                <img
+                  src={previewUrl}
+                  alt="Uploaded 1099-INT"
+                  className="h-32 w-32 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground">1099-INT Uploaded</p>
+                      {isProcessing && ocrProgress && (
+                        <p className="mt-1 text-sm text-gray-600">
+                          {ocrProgress.status === "initializing"
+                            ? "Starting OCR..."
+                            : `Processing... ${Math.round(ocrProgress.progress * 100)}%`}
+                        </p>
+                      )}
+                      {!isProcessing && !uploadError && (
+                        <p className="mt-1 text-sm text-success">
+                          ✓ Form data extracted! Review and edit below.
+                        </p>
+                      )}
+                      {uploadError && (
+                        <p className="mt-1 text-sm text-orange-600">
+                          ⚠ {uploadError}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearUpload}
+                      className="text-sm text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">Payer Name *</label>
@@ -640,6 +853,98 @@ export default function Income1099Page() {
           <h2 className="mb-4 text-xl font-semibold text-foreground">
             {editingId ? "Edit 1099-DIV" : "Add 1099-DIV (Dividend Income)"}
           </h2>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {/* OCR Upload Section */}
+          {!previewUrl && !editingId && (
+            <div className="mb-6 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 p-6">
+              <div className="text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                <h3 className="mt-2 text-lg font-semibold text-blue-900">
+                  Save 5+ minutes with document upload
+                </h3>
+                <p className="mt-1 text-sm text-blue-700">
+                  Upload a photo of your 1099-DIV and we'll automatically fill in the details
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing}
+                  className="mt-4 rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isProcessing ? "Processing..." : "Upload 1099-DIV Image"}
+                </button>
+                <p className="mt-2 text-xs text-blue-600">
+                  Supports JPG, PNG, WebP, or PDF (max 10MB) • 100% private, processed on your device
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Image Preview & Processing */}
+          {previewUrl && (
+            <div className="mb-6 rounded-lg border border-gray-300 bg-gray-50 p-4">
+              <div className="flex items-start gap-4">
+                <img
+                  src={previewUrl}
+                  alt="Uploaded 1099-DIV"
+                  className="h-32 w-32 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground">1099-DIV Uploaded</p>
+                      {isProcessing && ocrProgress && (
+                        <p className="mt-1 text-sm text-gray-600">
+                          {ocrProgress.status === "initializing"
+                            ? "Starting OCR..."
+                            : `Processing... ${Math.round(ocrProgress.progress * 100)}%`}
+                        </p>
+                      )}
+                      {!isProcessing && !uploadError && (
+                        <p className="mt-1 text-sm text-success">
+                          ✓ Form data extracted! Review and edit below.
+                        </p>
+                      )}
+                      {uploadError && (
+                        <p className="mt-1 text-sm text-orange-600">
+                          ⚠ {uploadError}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearUpload}
+                      className="text-sm text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">Payer Name *</label>
@@ -829,6 +1134,98 @@ export default function Income1099Page() {
           <h2 className="mb-4 text-xl font-semibold text-foreground">
             {editingId ? "Edit 1099-MISC" : "Add 1099-MISC (Miscellaneous Income)"}
           </h2>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {/* OCR Upload Section */}
+          {!previewUrl && !editingId && (
+            <div className="mb-6 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50 p-6">
+              <div className="text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                <h3 className="mt-2 text-lg font-semibold text-blue-900">
+                  Save 5+ minutes with document upload
+                </h3>
+                <p className="mt-1 text-sm text-blue-700">
+                  Upload a photo of your 1099-MISC and we'll automatically fill in the details
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing}
+                  className="mt-4 rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isProcessing ? "Processing..." : "Upload 1099-MISC Image"}
+                </button>
+                <p className="mt-2 text-xs text-blue-600">
+                  Supports JPG, PNG, WebP, or PDF (max 10MB) • 100% private, processed on your device
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Image Preview & Processing */}
+          {previewUrl && (
+            <div className="mb-6 rounded-lg border border-gray-300 bg-gray-50 p-4">
+              <div className="flex items-start gap-4">
+                <img
+                  src={previewUrl}
+                  alt="Uploaded 1099-MISC"
+                  className="h-32 w-32 rounded-lg object-cover"
+                />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-semibold text-foreground">1099-MISC Uploaded</p>
+                      {isProcessing && ocrProgress && (
+                        <p className="mt-1 text-sm text-gray-600">
+                          {ocrProgress.status === "initializing"
+                            ? "Starting OCR..."
+                            : `Processing... ${Math.round(ocrProgress.progress * 100)}%`}
+                        </p>
+                      )}
+                      {!isProcessing && !uploadError && (
+                        <p className="mt-1 text-sm text-success">
+                          ✓ Form data extracted! Review and edit below.
+                        </p>
+                      )}
+                      {uploadError && (
+                        <p className="mt-1 text-sm text-orange-600">
+                          ⚠ {uploadError}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearUpload}
+                      className="text-sm text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">Payer Name *</label>

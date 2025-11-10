@@ -27,58 +27,39 @@ export const TAX_SCHEDULES = [
 export const eligibilityFormSchema = z.object({
   // Basic financial info
   agi: z
-    .number({
-      required_error: "Adjusted Gross Income is required",
-      invalid_type_error: "Please enter a valid number",
-    })
+    .number()
     .min(0, "AGI cannot be negative")
     .max(1000000, "AGI seems unusually high"),
 
   // Personal info
-  age: z.preprocess(
-    (val) => {
-      // Convert empty string or NaN to undefined
-      if (val === "" || val === null || (typeof val === "number" && isNaN(val))) {
-        return undefined;
-      }
-      return val;
-    },
-    z
-      .number({
-        invalid_type_error: "Please enter a valid age",
-      })
-      .min(16, "Must be at least 16 years old")
-      .max(120, "Please enter a valid age")
-      .optional()
-  ),
+  age: z
+    .number()
+    .min(16, "Must be at least 16 years old")
+    .max(120, "Please enter a valid age")
+    .optional(),
 
-  state: z.enum(US_STATES, {
-    required_error: "Please select your state",
-  }),
+  state: z.enum(US_STATES),
 
   // Tax situation
   filingStatus: z.enum(
-    ["single", "married-joint", "married-separate", "head-of-household", "qualifying-widow"],
-    {
-      required_error: "Please select your filing status",
-    }
+    ["single", "married-joint", "married-separate", "head-of-household", "qualifying-widow"]
   ),
 
-  needsStateTaxReturn: z.boolean().default(true),
+  needsStateTaxReturn: z.boolean(),
 
-  hasSchedules: z.array(z.string()).default([]),
+  hasSchedules: z.array(z.string()),
 
-  needsPriorYearReturn: z.boolean().default(false),
+  needsPriorYearReturn: z.boolean(),
 
   // Special circumstances
-  isMilitary: z.boolean().default(false),
-  isStudent: z.boolean().default(false),
-  hasDisability: z.boolean().default(false),
+  isMilitary: z.boolean(),
+  isStudent: z.boolean(),
+  hasDisability: z.boolean(),
 
   // Preferences
-  preferSpanish: z.boolean().default(false),
-  wantsLiveSupport: z.boolean().default(false),
-  wantsMobileApp: z.boolean().default(false),
+  preferSpanish: z.boolean(),
+  wantsLiveSupport: z.boolean(),
+  wantsMobileApp: z.boolean(),
 });
 
 export type EligibilityFormData = z.infer<typeof eligibilityFormSchema>;

@@ -21,6 +21,7 @@ import {
   calculateChildTaxCredit,
   calculateAdditionalChildTaxCredit,
 } from "@/lib/tax-prep/tax-calculator";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ReviewPage() {
   const router = useRouter();
@@ -183,7 +184,7 @@ export default function ReviewPage() {
     const seCalculation = calculateSelfEmploymentTax(
       selfEmploymentIncome,
       taxReturn.form1040.filingStatus,
-      taxYear
+      taxYear as any
     );
     setSelfEmploymentTax(seCalculation.seTax);
 
@@ -198,7 +199,7 @@ export default function ReviewPage() {
     const incomeTax = calculateIncomeTax(
       taxable,
       taxReturn.form1040.filingStatus,
-      taxYear
+      taxYear as any
     );
 
     // Total tax before credits = income tax + SE tax
@@ -215,7 +216,7 @@ export default function ReviewPage() {
       earnedIncome,
       qualifyingChildrenForEIC,
       taxReturn.form1040.filingStatus,
-      taxYear
+      taxYear as any
     );
     setEarnedIncomeCredit(eic);
 
@@ -227,7 +228,7 @@ export default function ReviewPage() {
       childrenUnder17,
       adjustedAGI,
       taxReturn.form1040.filingStatus,
-      taxYear
+      taxYear as any
     );
 
     // Credits
@@ -255,6 +256,13 @@ export default function ReviewPage() {
     const difference = payments - finalTax;
     setRefundOrOwed(Math.abs(difference));
     setIsRefund(difference >= 0);
+
+    // Track tax prep completion
+    trackEvent({
+      type: 'tax_prep_completed',
+      year: taxReturn.form1040.taxYear,
+      hasRefund: difference >= 0,
+    });
 
     setLoading(false);
   }, [router, taxYear]);
