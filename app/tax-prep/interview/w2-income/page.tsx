@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +10,18 @@ import {
   saveTaxReturn,
 } from "@/lib/tax-prep/storage";
 import { W2Income } from "@/lib/tax-prep/types";
+import {
+  processImage,
+  validateImageFile,
+  createImagePreview,
+  revokeImagePreview,
+  type OCRProgress,
+} from "@/lib/tax-prep/ocr";
+import {
+  parseW2Text,
+  validateParsedW2,
+  type ParsedW2Data,
+} from "@/lib/tax-prep/parsers/w2-parser";
 
 const w2Schema = z.object({
   employerName: z.string().min(1, "Employer name is required"),
@@ -34,6 +46,13 @@ export default function W2IncomePage() {
   const [w2s, setW2s] = useState<W2Income[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // OCR Upload States
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState<OCRProgress | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -145,6 +164,84 @@ export default function W2IncomePage() {
     router.push("/tax-prep/interview/1099-income");
   };
 
+  // OCR Upload Handlers
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Reset states
+    setUploadError(null);
+    setOcrProgress(null);
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setUploadError(validation.error || "Invalid file");
+      return;
+    }
+
+    // Create preview
+    const preview = createImagePreview(file);
+    setPreviewUrl(preview);
+
+    // Process OCR
+    setIsProcessing(true);
+    try {
+      const result = await processImage(file, (progress) => {
+        setOcrProgress(progress);
+      });
+
+      // Parse W-2 data
+      const parsedData = parseW2Text(result.text);
+      const missingFields = validateParsedW2(parsedData);
+
+      if (missingFields.length > 0) {
+        setUploadError(
+          `Could not extract all fields: ${missingFields.join(", ")}. Please review and fill in missing information.`
+        );
+      }
+
+      // Auto-fill form fields
+      if (parsedData.employerName) setValue("employerName", parsedData.employerName);
+      if (parsedData.employerEIN) setValue("employerEIN", parsedData.employerEIN);
+      if (parsedData.wages !== undefined) setValue("wages", parsedData.wages);
+      if (parsedData.federalTaxWithheld !== undefined)
+        setValue("federalTaxWithheld", parsedData.federalTaxWithheld);
+      if (parsedData.socialSecurityWages !== undefined)
+        setValue("socialSecurityWages", parsedData.socialSecurityWages);
+      if (parsedData.socialSecurityTaxWithheld !== undefined)
+        setValue("socialSecurityTaxWithheld", parsedData.socialSecurityTaxWithheld);
+      if (parsedData.medicareWages !== undefined)
+        setValue("medicareWages", parsedData.medicareWages);
+      if (parsedData.medicareTaxWithheld !== undefined)
+        setValue("medicareTaxWithheld", parsedData.medicareTaxWithheld);
+      if (parsedData.stateTaxWithheld !== undefined)
+        setValue("stateTaxWithheld", parsedData.stateTaxWithheld);
+      if (parsedData.stateWages !== undefined) setValue("stateWages", parsedData.stateWages);
+      if (parsedData.state) setValue("state", parsedData.state);
+    } catch (error) {
+      console.error("OCR error:", error);
+      setUploadError(
+        error instanceof Error ? error.message : "Failed to process image. Please enter manually."
+      );
+    } finally {
+      setIsProcessing(false);
+      setOcrProgress(null);
+    }
+  };
+
+  const handleClearUpload = () => {
+    if (previewUrl) {
+      revokeImagePreview(previewUrl);
+    }
+    setPreviewUrl(null);
+    setUploadError(null);
+    setOcrProgress(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const totalWages = w2s.reduce((sum, w2) => sum + w2.wages, 0);
   const totalFederalWithheld = w2s.reduce((sum, w2) => sum + w2.federalTaxWithheld, 0);
 
@@ -242,6 +339,113 @@ export default function W2IncomePage() {
             <h2 className="mb-4 text-xl font-semibold text-foreground">
               {editingId ? "Edit W-2" : "Add W-2 Form"}
             </h2>
+
+            {/* Upload W-2 Image */}
+            <div className="mb-6 rounded-lg bg-blue-50 p-4 border-2 border-dashed border-blue-300">
+              <div className="flex items-start gap-3">
+                <svg
+                  className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">
+                    Upload W-2 Image (Optional)
+                  </h3>
+                  <p className="text-sm text-blue-800 mb-3">
+                    Take a photo or upload an image of your W-2, and we'll automatically fill in the fields for you.
+                  </p>
+
+                  {!previewUrl && !isProcessing && (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="w2-upload"
+                      />
+                      <label
+                        htmlFor="w2-upload"
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 cursor-pointer"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        Choose File
+                      </label>
+                      <p className="mt-2 text-xs text-blue-700">
+                        Accepts JPG, PNG, WebP, or PDF (max 10MB)
+                      </p>
+                    </div>
+                  )}
+
+                  {isProcessing && ocrProgress && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                        <span className="text-sm font-medium text-blue-900">
+                          {ocrProgress.status}... {Math.round(ocrProgress.progress * 100)}%
+                        </span>
+                      </div>
+                      <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 transition-all duration-300"
+                          style={{ width: `${ocrProgress.progress * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {previewUrl && !isProcessing && (
+                    <div className="space-y-3">
+                      <div className="relative inline-block">
+                        <img
+                          src={previewUrl}
+                          alt="W-2 Preview"
+                          className="h-32 rounded-lg border border-blue-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleClearUpload}
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white hover:bg-red-600 flex items-center justify-center"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <p className="text-sm font-medium text-green-700">
+                        ✓ Image processed! Review the auto-filled fields below.
+                      </p>
+                    </div>
+                  )}
+
+                  {uploadError && (
+                    <div className="mt-2 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
+                      <p className="text-sm text-yellow-800">{uploadError}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-6">
               {/* Employer Info */}
