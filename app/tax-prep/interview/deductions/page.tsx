@@ -138,7 +138,7 @@ export default function DeductionsPage() {
     taxReturn.progress.currentStep = 4;
 
     saveTaxReturn(taxReturn);
-    router.push("/tax-prep/interview/credits");
+    router.push("/tax-prep/interview/adjustments");
   };
 
   const saltTotal = Math.min(
@@ -477,7 +477,7 @@ export default function DeductionsPage() {
         <div className="flex justify-between border-t border-gray-200 pt-6">
           <button
             type="button"
-            onClick={() => router.push("/tax-prep/interview/w2-income")}
+            onClick={() => router.push("/tax-prep/interview/rental-income")}
             className="rounded-lg border border-gray-300 px-6 py-2 font-semibold text-gray-700 hover:bg-gray-50"
           >
             ← Back

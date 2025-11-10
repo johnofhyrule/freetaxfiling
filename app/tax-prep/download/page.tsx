@@ -102,9 +102,9 @@ export default function DownloadPage() {
 
       <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         {/* Success Icon */}
-        <div className="flex justify-center">
+        <div className="mb-6 flex justify-center">
           {!pdfGenerated && (
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
               <svg
                 className="h-10 w-10 text-success"
                 fill="none"
@@ -122,7 +122,7 @@ export default function DownloadPage() {
           )}
 
           {pdfGenerated && (
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
               <svg
                 className="h-10 w-10 text-primary"
                 fill="none"
@@ -140,15 +140,17 @@ export default function DownloadPage() {
           )}
         </div>
 
-        <h1 className="text-center text-3xl font-bold text-foreground">
-          {pdfGenerated ? "PDF Ready!" : "Your Return is Complete"}
-        </h1>
+        <div className="w-full">
+          <h1 className="text-center text-3xl font-bold text-foreground">
+            {pdfGenerated ? "PDF Ready!" : "Your Return is Complete"}
+          </h1>
 
-        <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-gray-600">
-          {pdfGenerated
-            ? "Your tax return PDF has been generated. You can download it again or print it."
-            : "Generate your Form 1040 PDF to print and mail to the IRS."}
-        </p>
+          <p className="mx-auto mt-4 w-full max-w-2xl text-center text-lg text-gray-600">
+            {pdfGenerated
+              ? "Your tax return PDF has been generated. You can download it again or print it."
+              : "Generate your Form 1040 PDF to print and mail to the IRS."}
+          </p>
+        </div>
 
         {/* Error Message */}
         {error && (

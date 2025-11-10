@@ -101,7 +101,7 @@ export default function PaymentsPage() {
     taxReturn.progress.currentStep = 6;
 
     saveTaxReturn(taxReturn);
-    router.push("/tax-prep/interview/review");
+    router.push("/tax-prep/interview/bank-info");
   };
 
   return (

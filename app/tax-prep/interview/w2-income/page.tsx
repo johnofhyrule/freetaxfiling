@@ -142,7 +142,7 @@ export default function W2IncomePage() {
     taxReturn.progress.currentStep = 3;
 
     saveTaxReturn(taxReturn);
-    router.push("/tax-prep/interview/deductions");
+    router.push("/tax-prep/interview/1099-income");
   };
 
   const totalWages = w2s.reduce((sum, w2) => sum + w2.wages, 0);

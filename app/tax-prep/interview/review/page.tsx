@@ -58,12 +58,82 @@ export default function ReviewPage() {
       (sum, div) => sum + div.ordinaryDividends,
       0
     );
+    const capitalGains = taxReturn.form1040.capitalGains1099B.reduce(
+      (sum, cg) => sum + cg.gainOrLoss,
+      0
+    );
+    const miscIncome = taxReturn.form1040.misc1099.reduce((sum, misc) => {
+      return sum +
+        (misc.nonemployeeCompensation || 0) +
+        (misc.rents || 0) +
+        (misc.royalties || 0) +
+        (misc.otherIncome || 0);
+    }, 0);
 
-    const income = w2Wages + interestIncome + dividendIncome;
-    setTotalIncome(income);
+    // Self-employment income (net profit)
+    const selfEmploymentIncome = (taxReturn.form1040.selfEmploymentIncome || []).reduce((sum, business) => {
+      const income = business.grossReceipts - business.returns + business.otherIncome;
+      const expenses =
+        business.advertising +
+        business.carAndTruck +
+        business.commissions +
+        business.insurance +
+        business.interest +
+        business.legal +
+        business.officeExpense +
+        business.rent +
+        business.repairs +
+        business.supplies +
+        business.taxes +
+        business.travel +
+        business.meals +
+        business.utilities +
+        business.wages +
+        business.otherExpenses.reduce((s, e) => s + e.amount, 0);
+      return sum + (income - expenses);
+    }, 0);
 
-    // AGI (simplified - just income for now)
-    const agi = income;
+    // Rental income (net income)
+    const rentalIncome = (taxReturn.form1040.rentalIncome || []).reduce((sum, property) => {
+      const expenses =
+        property.advertising +
+        property.auto +
+        property.cleaning +
+        property.commissions +
+        property.insurance +
+        property.legal +
+        property.management +
+        property.mortgage +
+        property.otherInterest +
+        property.repairs +
+        property.supplies +
+        property.taxes +
+        property.utilities +
+        property.depreciation +
+        property.otherExpenses.reduce((s, e) => s + e.amount, 0);
+      return sum + (property.rents - expenses);
+    }, 0);
+
+    const totalGrossIncome = w2Wages + interestIncome + dividendIncome + capitalGains + miscIncome + selfEmploymentIncome + rentalIncome;
+    setTotalIncome(totalGrossIncome);
+
+    // Adjustments to income
+    const adjustments = taxReturn.form1040.adjustments;
+    const totalAdjustments =
+      adjustments.educatorExpenses +
+      adjustments.businessExpenses +
+      adjustments.hsaDeduction +
+      adjustments.movingExpenses +
+      adjustments.selfEmploymentTax +
+      adjustments.selfEmployedRetirement +
+      adjustments.selfEmployedHealthInsurance +
+      adjustments.penalty +
+      adjustments.iraDeduction +
+      adjustments.studentLoanInterest +
+      adjustments.tuitionAndFees;
+
+    // AGI = Total Income - Adjustments
+    const agi = totalGrossIncome - totalAdjustments;
     setAdjustedGrossIncome(agi);
 
     // Deduction
@@ -387,7 +457,7 @@ export default function ReviewPage() {
       <div className="flex justify-between border-t border-gray-200 pt-6">
         <button
           type="button"
-          onClick={() => router.push("/tax-prep/interview/payments")}
+          onClick={() => router.push("/tax-prep/interview/bank-info")}
           className="rounded-lg border border-gray-300 px-6 py-2 font-semibold text-gray-700 hover:bg-gray-50"
         >
           ← Back
