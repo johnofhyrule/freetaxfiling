@@ -14,6 +14,13 @@ import {
   STANDARD_DEDUCTIONS_2022,
   FilingStatus,
 } from "@/lib/tax-prep/types";
+import {
+  calculateIncomeTax,
+  calculateSelfEmploymentTax,
+  calculateEarnedIncomeCredit,
+  calculateChildTaxCredit,
+  calculateAdditionalChildTaxCredit,
+} from "@/lib/tax-prep/tax-calculator";
 
 export default function ReviewPage() {
   const router = useRouter();
@@ -30,6 +37,10 @@ export default function ReviewPage() {
   const [totalPayments, setTotalPayments] = useState(0);
   const [refundOrOwed, setRefundOrOwed] = useState(0);
   const [isRefund, setIsRefund] = useState(true);
+
+  // Additional tax details
+  const [selfEmploymentTax, setSelfEmploymentTax] = useState(0);
+  const [earnedIncomeCredit, setEarnedIncomeCredit] = useState(0);
 
   // Tax return data
   const [firstName, setFirstName] = useState("");
@@ -168,25 +179,69 @@ export default function ReviewPage() {
     }
     setDeduction(deduct);
 
+    // Calculate self-employment tax
+    const seCalculation = calculateSelfEmploymentTax(
+      selfEmploymentIncome,
+      taxReturn.form1040.filingStatus,
+      taxYear
+    );
+    setSelfEmploymentTax(seCalculation.seTax);
+
+    // Adjust AGI for SE tax deduction (half of SE tax is deductible)
+    const adjustedAGI = agi - seCalculation.deductibleAmount;
+
     // Taxable Income
-    const taxable = Math.max(0, agi - deduct);
+    const taxable = Math.max(0, adjustedAGI - deduct);
     setTaxableIncome(taxable);
 
-    // Tax calculation (simplified 2024 tax brackets for single filer)
-    const tax = calculateTax(taxable, taxReturn.form1040.filingStatus);
-    setTaxBeforeCredits(tax);
+    // Federal income tax calculation (using progressive tax brackets for all filing statuses)
+    const incomeTax = calculateIncomeTax(
+      taxable,
+      taxReturn.form1040.filingStatus,
+      taxYear
+    );
+
+    // Total tax before credits = income tax + SE tax
+    const taxBeforeCred = incomeTax + seCalculation.seTax;
+    setTaxBeforeCredits(taxBeforeCred);
+
+    // Calculate Earned Income Credit
+    const qualifyingChildrenForEIC = taxReturn.form1040.dependents.filter(
+      (dep) => dep.qualifiesForChildTaxCredit
+    ).length;
+    const earnedIncome = w2Wages + selfEmploymentIncome;
+    const eic = calculateEarnedIncomeCredit(
+      adjustedAGI,
+      earnedIncome,
+      qualifyingChildrenForEIC,
+      taxReturn.form1040.filingStatus,
+      taxYear
+    );
+    setEarnedIncomeCredit(eic);
+
+    // Calculate Child Tax Credit (more accurate calculation)
+    const childrenUnder17 = taxReturn.form1040.dependents.filter(
+      (dep) => dep.qualifiesForChildTaxCredit
+    ).length;
+    const calculatedCTC = calculateChildTaxCredit(
+      childrenUnder17,
+      adjustedAGI,
+      taxReturn.form1040.filingStatus,
+      taxYear
+    );
 
     // Credits
     const credits =
-      taxReturn.form1040.credits.childTaxCredit +
+      calculatedCTC +
       taxReturn.form1040.credits.otherDependentCredit +
       taxReturn.form1040.credits.childCareCredit +
       taxReturn.form1040.credits.educationCredits +
-      taxReturn.form1040.credits.retirementSavingsCredit;
+      taxReturn.form1040.credits.retirementSavingsCredit +
+      eic; // Add EIC to credits
     setTotalCredits(credits);
 
-    // Total Tax
-    const finalTax = Math.max(0, tax - credits);
+    // Total Tax (can't be negative)
+    const finalTax = Math.max(0, taxBeforeCred - credits);
     setTotalTax(finalTax);
 
     // Payments
@@ -203,26 +258,6 @@ export default function ReviewPage() {
 
     setLoading(false);
   }, [router, taxYear]);
-
-  // Simplified tax calculation (2024 single filer rates)
-  const calculateTax = (taxableIncome: number, filingStatus: FilingStatus): number => {
-    // This is a simplified calculation for demonstration
-    // Real calculation would use exact tax brackets and rates
-
-    if (filingStatus === "single") {
-      if (taxableIncome <= 11600) return taxableIncome * 0.10;
-      if (taxableIncome <= 47150) return 1160 + (taxableIncome - 11600) * 0.12;
-      if (taxableIncome <= 100525) return 5426 + (taxableIncome - 47150) * 0.22;
-      if (taxableIncome <= 191950) return 17168.50 + (taxableIncome - 100525) * 0.24;
-      if (taxableIncome <= 243725) return 39110.50 + (taxableIncome - 191950) * 0.32;
-      if (taxableIncome <= 609350) return 55678.50 + (taxableIncome - 243725) * 0.35;
-      return 183647.25 + (taxableIncome - 609350) * 0.37;
-    }
-
-    // Similar calculations for other filing statuses
-    // For now, using single rates as placeholder
-    return taxableIncome * 0.22; // Simplified
-  };
 
   const handleFinalize = () => {
     const taxReturn = getCurrentTaxReturn();
