@@ -359,9 +359,12 @@ export default function W2IncomePage() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-blue-900 mb-1">
                     Upload W-2 Image (Optional)
+                    <span className="ml-2 text-xs font-normal bg-blue-200 text-blue-800 px-2 py-0.5 rounded">
+                      Save 5+ minutes
+                    </span>
                   </h3>
                   <p className="text-sm text-blue-800 mb-3">
-                    Take a photo or upload an image of your W-2, and we'll automatically fill in the fields for you.
+                    Take a photo or upload an image of your W-2, and we'll automatically fill in the fields for you. All processing happens in your browser - your data never leaves your device.
                   </p>
 
                   {!previewUrl && !isProcessing && (
@@ -376,7 +379,7 @@ export default function W2IncomePage() {
                       />
                       <label
                         htmlFor="w2-upload"
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 cursor-pointer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 cursor-pointer transition-colors"
                       >
                         <svg
                           className="h-4 w-4"
@@ -394,7 +397,7 @@ export default function W2IncomePage() {
                         Choose File
                       </label>
                       <p className="mt-2 text-xs text-blue-700">
-                        Accepts JPG, PNG, WebP, or PDF (max 10MB)
+                        <strong>Tip:</strong> For best results, ensure the W-2 is flat and well-lit. Accepts JPG, PNG, WebP, or PDF (max 10MB).
                       </p>
                     </div>
                   )}
@@ -432,9 +435,17 @@ export default function W2IncomePage() {
                           ×
                         </button>
                       </div>
-                      <p className="text-sm font-medium text-green-700">
-                        ✓ Image processed! Review the auto-filled fields below.
-                      </p>
+                      <div className="p-2 rounded-lg bg-green-50 border border-green-200">
+                        <p className="text-sm font-medium text-green-800 flex items-center gap-2">
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Image processed successfully!
+                        </p>
+                        <p className="text-xs text-green-700 mt-1">
+                          Please review the auto-filled fields below and make any necessary corrections.
+                        </p>
+                      </div>
                     </div>
                   )}
 

@@ -25,24 +25,32 @@ export function parseW2Text(text: string): ParsedW2Data {
   const cleanText = text.replace(/\s+/g, ' ').trim();
 
   // Employer EIN (format: XX-XXXXXXX)
-  const einMatch = cleanText.match(/\b(\d{2}[-\s]?\d{7})\b/);
+  // Improved to handle common OCR errors (O vs 0, I vs 1)
+  const einMatch = cleanText.match(/\b([O0]?\d{1,2}[-\s]?\d{7})\b/);
   if (einMatch) {
-    parsed.employerEIN = einMatch[1].replace(/[-\s]/g, '');
+    let ein = einMatch[1].replace(/[-\s]/g, '');
+    // Fix common OCR errors
+    ein = ein.replace(/O/g, '0').replace(/I/g, '1').replace(/l/g, '1');
+    if (ein.length === 9) {
+      parsed.employerEIN = ein.slice(0, 2) + '-' + ein.slice(2);
+    }
   }
 
   // Box 1: Wages, tips, other compensation
-  // Look for "Box 1" or "1 Wages" followed by an amount
+  // Enhanced patterns to catch more variations
   const box1Patterns = [
-    /(?:Box\s*1|1\s*Wages)[:\s]*\$?\s*([\d,]+\.?\d*)/i,
-    /Wages,?\s*tips,?\s*other\s*compensation[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    /(?:Box\s*[1I]|[1I]\s*Wages?)[:\s.-]*\$?\s*([\d,]+\.?\d*)/i,
+    /Wages?,?\s*tips?,?\s*(?:and\s*)?other\s*comp(?:ensation)?[:\s.-]*\$?\s*([\d,]+\.?\d*)/i,
+    /\b[1I]\s*[:\s.-]+\s*\$?\s*([\d,]+\.?\d*)/,  // Generic box 1 pattern
   ];
   const wages = extractAmount(cleanText, box1Patterns);
   if (wages) parsed.wages = wages;
 
   // Box 2: Federal income tax withheld
   const box2Patterns = [
-    /(?:Box\s*2|2\s*Federal)[:\s]*\$?\s*([\d,]+\.?\d*)/i,
-    /Federal\s*income\s*tax\s*withheld[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+    /(?:Box\s*[2Z]|[2Z]\s*Federal)[:\s.-]*\$?\s*([\d,]+\.?\d*)/i,
+    /Federal\s*income\s*tax\s*(?:with)?held[:\s.-]*\$?\s*([\d,]+\.?\d*)/i,
+    /\b[2Z]\s*[:\s.-]+\s*\$?\s*([\d,]+\.?\d*)/,  // Generic box 2 pattern
   ];
   const federalTax = extractAmount(cleanText, box2Patterns);
   if (federalTax) parsed.federalTaxWithheld = federalTax;
