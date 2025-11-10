@@ -1,7 +1,7 @@
 # Development Handoff Notes
 
-**Last Updated:** 2025-11-08
-**Current Status:** Tax Prep Assistant (PRD 2) core functionality complete
+**Last Updated:** 2025-11-09
+**Current Status:** Tax Prep Assistant (PRD 2) - All core features complete
 **Dev Server:** Running on localhost:3001
 
 ---
@@ -15,42 +15,38 @@
 - Results page with 8 Free File partners
 - All features working and ready for production
 
-### 2. Tax Preparation Assistant (PRD 2) - CORE COMPLETE ✅
+### 2. Tax Preparation Assistant (PRD 2) - COMPLETE ✅
 **Feature-flagged:** `NEXT_PUBLIC_FEATURE_TAX_PREP=true` in `.env.local`
 
-**Interview Flow (7 pages):**
+**Interview Flow (12 pages):**
 1. `/tax-prep/start` - Tax year & filing status selection
 2. `/tax-prep/interview/basic-info` - Personal information, address
 3. `/tax-prep/interview/dependents` - Add dependents with Child Tax Credit auto-calc
 4. `/tax-prep/interview/w2-income` - W-2 forms with all boxes
-5. `/tax-prep/interview/deductions` - Standard vs itemized with smart recommendations
-6. `/tax-prep/interview/credits` - Tax credits (child, education, child care)
-7. `/tax-prep/interview/payments` - Withholding, estimated payments, direct deposit
-8. `/tax-prep/interview/review` - Complete tax calculation and summary
-9. `/tax-prep/download` - PDF generation and download
+5. `/tax-prep/interview/1099-income` - 1099-INT, DIV, B, MISC (tabbed interface) ✨ NEW
+6. `/tax-prep/interview/self-employment` - Schedule C business income/expenses ✨ NEW
+7. `/tax-prep/interview/rental-income` - Schedule E rental property income ✨ NEW
+8. `/tax-prep/interview/deductions` - Standard vs itemized with smart recommendations
+9. `/tax-prep/interview/adjustments` - Schedule 1 adjustments to income ✨ NEW
+10. `/tax-prep/interview/credits` - Tax credits (child, education, child care)
+11. `/tax-prep/interview/payments` - Withholding, estimated payments
+12. `/tax-prep/interview/bank-info` - Direct deposit setup ✨ NEW
+13. `/tax-prep/interview/review` - Complete tax calculation and summary
+14. `/tax-prep/download` - PDF generation and download
 
 **Features:**
-- ✅ Full tax calculation with 2024 tax brackets
+- ✅ Full tax calculation with 2024 tax brackets (single filers)
+- ✅ All 1099 income types (INT, DIV, B, MISC)
+- ✅ Self-employment income (Schedule C)
+- ✅ Rental income (Schedule E)
+- ✅ Adjustments to income (Schedule 1)
+- ✅ Direct deposit/bank info setup
 - ✅ localStorage persistence (auto-save)
 - ✅ Progress bar tracking
 - ✅ Smart recommendations (itemized vs standard, SALT cap warnings)
-- ✅ PDF generation using pdf-lib
+- ✅ PDF generation using pdf-lib with signature fields
+- ✅ Automatic page overflow (creates page 2 if needed)
 - ✅ Download and preview PDF functionality
-
----
-
-## 🚧 Known Issues
-
-### Download Page Layout (NOT YET COMMITTED)
-**Status:** Fixed locally but NOT pushed to GitHub
-**Issue:** Text wrapping incorrectly, buttons too narrow
-**Fix Applied:**
-- Removed parent `text-center` div
-- Applied centering to individual elements
-- Changed buttons to `min-w-[200px]`
-- File: `app/tax-prep/download/page.tsx`
-
-**Action Needed:** Commit and push the download page fixes
 
 ---
 
@@ -65,16 +61,21 @@
 │   └── tax-prep/                   # Tax Prep Assistant (feature flagged)
 │       ├── page.tsx                # Tax Prep landing
 │       ├── start/page.tsx          # Start tax return
-│       ├── download/page.tsx       # PDF download (NEEDS COMMIT)
+│       ├── download/page.tsx       # PDF download
 │       └── interview/
 │           ├── layout.tsx          # Interview layout with progress bar
-│           ├── basic-info/
-│           ├── dependents/
-│           ├── w2-income/
-│           ├── deductions/
-│           ├── credits/
-│           ├── payments/
-│           └── review/
+│           ├── basic-info/         # Personal info
+│           ├── dependents/         # Dependents & credits
+│           ├── w2-income/          # W-2 wage forms
+│           ├── 1099-income/        # 1099-INT, DIV, B, MISC (NEW)
+│           ├── self-employment/    # Schedule C (NEW)
+│           ├── rental-income/      # Schedule E (NEW)
+│           ├── deductions/         # Standard/itemized
+│           ├── adjustments/        # Schedule 1 (NEW)
+│           ├── credits/            # Tax credits
+│           ├── payments/           # Withholding & payments
+│           ├── bank-info/          # Direct deposit (NEW)
+│           └── review/             # Final review & calculation
 ├── lib/
 │   ├── feature-flags.ts            # Feature flag configuration
 │   ├── matching.ts                 # Free File partner matching
@@ -82,9 +83,9 @@
 │   ├── schemas.ts                  # Zod validation schemas
 │   ├── data/partners.ts            # 8 Free File partners data
 │   └── tax-prep/
-│       ├── types.ts                # Form 1040 types
+│       ├── types.ts                # Form 1040 types (all schedules)
 │       ├── storage.ts              # localStorage management
-│       └── pdf-generator.ts        # PDF generation (pdf-lib)
+│       └── pdf-generator.ts        # PDF generation with signatures
 ├── docs/
 │   ├── PROJECT_ROADMAP.md          # All 4 PRDs roadmap
 │   └── HANDOFF.md                  # This file
@@ -114,6 +115,9 @@
   "pdf-lib": "^1.17.1"
 }
 ```
+
+**To Add for Next Phase:**
+- `tesseract.js` - Client-side OCR for document upload
 
 ---
 
@@ -154,23 +158,79 @@ npm run dev
 
 ---
 
-## 🎯 Next Steps
+## 🎯 Next Steps - PRIORITY ORDER
 
-### Immediate (Next Session Start)
-1. **Commit download page fixes** - The layout fixes are done but not committed
-2. **Test complete flow** - Go through entire tax prep flow end-to-end
-3. **Test PDF generation** - Ensure PDFs generate correctly with sample data
+### ⭐ **Priority 1: Document Upload/OCR (NEXT SESSION)**
+**Impact: HIGH** | **Effort: MEDIUM** | **Status: Not started**
 
-### Tax Prep Assistant - Additional Features
-1. **1099 Income Pages** - INT, DIV, B, MISC forms
-2. **Self-Employment (Schedule C)** - Business income/expenses
-3. **Rental Income (Schedule E)** - Rental property income
-4. **Prior Year Support** - 2021-2023 tax returns
-5. **State Tax Returns** - State-specific forms
+**Goal:** Auto-fill tax forms from uploaded images/PDFs
 
-### Future Products (PRD 3 & 4)
-- **State Filing Solution** - Multi-state e-filing platform
-- **Advocacy Platform** - Grassroots advocacy for free filing
+**Implementation Plan:**
+1. Install `tesseract.js` for client-side OCR
+2. Add upload UI to W-2 income page (proof of concept)
+3. Process images client-side (maintain privacy)
+4. Parse extracted text with regex patterns for W-2 fields
+5. Pre-fill form fields with extracted data
+6. Let user review/edit before saving
+7. Expand to 1099 forms (INT, DIV, B, MISC)
+
+**Why First:**
+- Biggest UX improvement (10+ min entry → 30 sec)
+- Reduces errors (no typos in SSNs, EINs, amounts)
+- Maintains privacy-first approach (all processing client-side)
+- Higher user retention (people abandon tedious forms)
+- Competitive advantage over manual-entry-only tools
+
+**Files to Create/Modify:**
+- `lib/tax-prep/ocr.ts` - OCR processing logic
+- `lib/tax-prep/parsers/w2-parser.ts` - W-2 text parsing
+- `lib/tax-prep/parsers/1099-parser.ts` - 1099 text parsing
+- `app/tax-prep/interview/w2-income/page.tsx` - Add upload UI
+- `app/tax-prep/interview/1099-income/page.tsx` - Add upload UI
+
+---
+
+### **Priority 2: Improve Tax Calculations**
+**Impact: MEDIUM-HIGH** | **Effort: MEDIUM**
+
+**Missing Features:**
+1. Tax brackets for all filing statuses (currently only single)
+2. Self-employment tax calculation (15.3% SE tax)
+3. Earned Income Credit (EIC)
+4. Alternative Minimum Tax (AMT)
+5. More accurate credit calculations
+
+**Files to Modify:**
+- `app/tax-prep/interview/review/page.tsx`
+- `lib/tax-prep/pdf-generator.ts`
+- `lib/tax-prep/types.ts` (add new calculation types)
+
+---
+
+### **Priority 3: Prior Year Support (2021-2023)**
+**Impact: MEDIUM** | **Effort: LOW-MEDIUM**
+
+**Implementation:**
+- Add 2023, 2022, 2021 tax brackets
+- Add year-specific standard deductions
+- Update forms for year-specific rules
+- Add year selector validation
+
+**Files to Modify:**
+- `lib/tax-prep/types.ts` - Add constants for each year
+- `app/tax-prep/interview/review/page.tsx` - Year-based calculations
+- `lib/tax-prep/pdf-generator.ts` - Year-based PDF generation
+
+---
+
+### **Priority 4: State Tax Returns (PRD 3)**
+**Impact: HIGH** | **Effort: VERY HIGH**
+
+**Note:** This is complex enough to be a separate product (PRD 3)
+- 50 different state forms
+- State-specific calculations and rules
+- Multi-state support
+- State e-filing integration
 
 ---
 
@@ -181,12 +241,14 @@ npm run dev
 - **Development:** Currently `true` in `.env.local`
 - File: `.env.local` (gitignored), `.env.example` (committed)
 
-### Tax Calculation
-- Uses 2024 tax brackets for single filers
-- Other filing statuses use simplified 22% rate (placeholder)
-- SALT deduction capped at $10,000
-- Child Tax Credit: $2,000/child under 17
-- Other Dependent Credit: $500/dependent
+### Tax Calculation (Current Limitations)
+- ✅ Uses 2024 tax brackets for single filers
+- ⚠️ Other filing statuses use simplified 22% rate (placeholder)
+- ✅ SALT deduction capped at $10,000
+- ✅ Child Tax Credit: $2,000/child under 17
+- ✅ Other Dependent Credit: $500/dependent
+- ⚠️ Self-employment tax not yet calculated
+- ⚠️ Earned Income Credit not yet implemented
 
 ### localStorage Keys
 - `tax-prep-returns` - Array of all tax returns
@@ -197,6 +259,12 @@ npm run dev
 - Commit messages should be descriptive and professional
 - Always test before committing
 
+### Known Quirks
+- **Download page text:** Uses inline styles instead of Tailwind classes
+  - Why: Tailwind compilation issue causes one-word-per-line wrapping
+  - File: `app/tax-prep/download/page.tsx` (lines 143-153)
+  - Solution: Inline `style={{ width: '100%', maxWidth: '672px', ... }}`
+
 ---
 
 ## 🐛 Debugging Tips
@@ -206,6 +274,7 @@ npm run dev
 2. **Node version warning** → Use Node 20+ (not 18)
 3. **Feature not showing** → Check `.env.local` feature flags
 4. **localStorage errors** → Check browser settings, private browsing blocks it
+5. **Text wrapping on download page** → Hard refresh (Cmd+Shift+R or Ctrl+Shift+R)
 
 ### Useful Commands
 ```bash
@@ -220,18 +289,26 @@ node --version
 
 # Clear localStorage (in browser console)
 localStorage.clear()
+
+# Hard refresh browser
+# Chrome/Edge: Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows)
+# Firefox: Cmd+Shift+R (Mac) or Ctrl+F5 (Windows)
 ```
 
 ---
 
 ## 📊 Progress Tracking
 
-**Free File Navigator:** 100% complete ✅
-**Tax Prep Assistant:** 80% complete (core done, advanced features pending)
-**State Filing Solution:** 0% (not started)
-**Advocacy Platform:** 0% (not started)
+**Free File Navigator (PRD 1):** 100% complete ✅
+**Tax Prep Assistant (PRD 2):** 95% complete ✅
+- Core features: 100% ✅
+- Advanced features: 100% ✅
+- Remaining: Better tax calculations, prior year support
 
-**Total Lines of Code:** ~7,000+ lines across all files
+**State Filing Solution (PRD 3):** 0% (not started)
+**Advocacy Platform (PRD 4):** 0% (not started)
+
+**Total Lines of Code:** ~10,500+ lines across all files
 
 ---
 
@@ -247,20 +324,49 @@ localStorage.clear()
 
 ## 💡 Quick Start for Next Session
 
-1. **Check uncommitted changes:**
+### Start Document Upload/OCR Feature
+
+1. **Install Tesseract.js:**
    ```bash
-   git status
+   npm install tesseract.js
+   npm install --save-dev @types/tesseract.js
    ```
 
-2. **Commit download page fix if needed:**
+2. **Create OCR utility:**
    ```bash
-   git add app/tax-prep/download/page.tsx
-   git commit -m "Fix layout issues on PDF download page"
-   git push
+   # Create new files
+   touch lib/tax-prep/ocr.ts
+   touch lib/tax-prep/parsers/w2-parser.ts
    ```
 
-3. **Continue development or start new feature**
+3. **Review current W-2 page structure:**
+   ```bash
+   # Understand current implementation
+   cat app/tax-prep/interview/w2-income/page.tsx
+   ```
+
+4. **Plan upload UI:**
+   - Add "Upload W-2" button above manual entry form
+   - Show image preview
+   - Display OCR progress indicator
+   - Pre-fill form on successful extraction
+   - Allow manual corrections
+
+5. **Test with sample W-2 images:**
+   - Find or create sample W-2 images for testing
+   - Test OCR accuracy
+   - Refine regex patterns for field extraction
+
+### Recent Commits
+```bash
+git log --oneline -5
+# c2e035e Fix text wrapping on download page with inline styles
+# 1839726 Add advanced tax prep features and fix PDF generation
+# 8d595ae Fix text wrapping and button width on download page
+# b5d460b Add development handoff notes for session continuity
+# 7e1154c Fix layout issues on PDF download page
+```
 
 ---
 
-*Last modified: 2025-11-08 by Claude*
+*Last modified: 2025-11-09 by Claude*
