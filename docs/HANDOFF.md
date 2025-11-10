@@ -206,23 +206,72 @@ npm run dev
 
 ---
 
-### **Priority 3: Prior Year Support (2021-2023)**
-**Impact: MEDIUM** | **Effort: LOW-MEDIUM**
+### **Priority 3: Privacy-First Analytics**
+**Impact: HIGH** | **Effort: LOW** | **Status: Not started**
+
+**Goal:** Track user behavior and feature adoption while maintaining privacy commitment
+
+**What to Track:**
+- Page views, unique visitors, user flow
+- Free File partner clicks and rankings
+- Tax prep tool usage (starts, completions, drop-off points)
+- OCR feature adoption and success rates
+- Feature usage (standard vs itemized, income types)
+- Which tax years users select
+
+**What NOT to Track:**
+- ❌ Actual tax data (SSNs, income amounts, names)
+- ❌ Form field values or localStorage data
+- ❌ Personally identifiable information
+
+**Recommended Solutions:**
+1. **Plausible** - Privacy-first, no cookies, GDPR compliant (~$9-19/month)
+2. **Fathom** - Similar to Plausible, privacy-focused
+3. **PostHog** - Product analytics + feature flags, self-hostable
+4. **Google Analytics 4** - Free but needs careful privacy configuration
 
 **Implementation:**
-- Add 2023, 2022, 2021 tax brackets
-- Add year-specific standard deductions
-- Update forms for year-specific rules
-- Add year selector validation
+- Add analytics script to `app/layout.tsx`
+- Create `lib/analytics.ts` utility for event tracking
+- Track anonymous events (e.g., "user_clicked_partner", "ocr_upload_success")
+- Use bucketed ranges instead of exact values (AGI: 30k-40k vs exact)
+- Update privacy page to mention analytics
+
+**Example Events:**
+```typescript
+analytics.track('user_clicked_free_file_partner', {
+  partner_name: 'TaxSlayer',
+  partner_rank: 1,
+  user_agi_range: '30000-40000',
+});
+analytics.track('ocr_upload_attempted', {
+  form_type: 'w2',
+  success: true,
+});
+```
+
+---
+
+### **Priority 4: Prior Year Support**
+**Impact: MEDIUM** | **Effort: LOW-MEDIUM** | **Status: Partially done**
+
+**Current Status:**
+- ✅ Tax years 2025, 2024, 2023, 2022 supported
+- ✅ Standard deductions for all 4 years
+- ⚠️ Tax brackets only for 2024 (single filers)
+
+**Remaining Work:**
+- Add 2025, 2023, 2022 tax brackets for all filing statuses
+- Add year-specific rules and limits
+- Year-specific credit amounts (Child Tax Credit, etc.)
 
 **Files to Modify:**
-- `lib/tax-prep/types.ts` - Add constants for each year
-- `app/tax-prep/interview/review/page.tsx` - Year-based calculations
+- `app/tax-prep/interview/review/page.tsx` - Year-based tax bracket calculations
 - `lib/tax-prep/pdf-generator.ts` - Year-based PDF generation
 
 ---
 
-### **Priority 4: State Tax Returns (PRD 3)**
+### **Priority 5: State Tax Returns (PRD 3)**
 **Impact: HIGH** | **Effort: VERY HIGH**
 
 **Note:** This is complex enough to be a separate product (PRD 3)
