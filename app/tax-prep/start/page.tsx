@@ -13,7 +13,7 @@ import {
 } from "@/lib/tax-prep/storage";
 import { TaxYear, FilingStatus } from "@/lib/tax-prep/types";
 
-const TAX_YEARS: TaxYear[] = [2024, 2023, 2022, 2021];
+const TAX_YEARS: TaxYear[] = [2025, 2024, 2023, 2022];
 
 const FILING_STATUSES: Array<{
   value: FilingStatus;
@@ -49,7 +49,7 @@ const FILING_STATUSES: Array<{
 
 export default function StartTaxPrepPage() {
   const router = useRouter();
-  const [taxYear, setTaxYear] = useState<TaxYear>(2024);
+  const [taxYear, setTaxYear] = useState<TaxYear>(2025);
   const [filingStatus, setFilingStatus] = useState<FilingStatus>("single");
   const [hasExistingReturn, setHasExistingReturn] = useState(false);
   const [storageError, setStorageError] = useState(false);

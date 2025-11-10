@@ -12,7 +12,7 @@ export type FilingStatus =
   | "qualifying-widow";
 
 // Tax Year
-export type TaxYear = 2021 | 2022 | 2023 | 2024;
+export type TaxYear = 2022 | 2023 | 2024 | 2025;
 
 // Personal Information
 export interface PersonalInfo {
@@ -342,6 +342,15 @@ export type InterviewStep =
   | "review"
   | "complete";
 
+// Standard Deduction Amounts (2025 - projected based on inflation adjustment)
+export const STANDARD_DEDUCTIONS_2025: Record<FilingStatus, number> = {
+  single: 15000,
+  "married-joint": 30000,
+  "married-separate": 15000,
+  "head-of-household": 22500,
+  "qualifying-widow": 30000,
+};
+
 // Standard Deduction Amounts (2024)
 export const STANDARD_DEDUCTIONS_2024: Record<FilingStatus, number> = {
   single: 14600,
@@ -358,6 +367,15 @@ export const STANDARD_DEDUCTIONS_2023: Record<FilingStatus, number> = {
   "married-separate": 13850,
   "head-of-household": 20800,
   "qualifying-widow": 27700,
+};
+
+// Standard Deduction Amounts (2022)
+export const STANDARD_DEDUCTIONS_2022: Record<FilingStatus, number> = {
+  single: 12950,
+  "married-joint": 25900,
+  "married-separate": 12950,
+  "head-of-household": 19400,
+  "qualifying-widow": 25900,
 };
 
 // Tax Brackets (simplified - actual calculation is more complex)

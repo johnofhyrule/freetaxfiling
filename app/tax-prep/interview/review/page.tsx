@@ -8,8 +8,10 @@ import {
   saveTaxReturn,
 } from "@/lib/tax-prep/storage";
 import {
+  STANDARD_DEDUCTIONS_2025,
   STANDARD_DEDUCTIONS_2024,
   STANDARD_DEDUCTIONS_2023,
+  STANDARD_DEDUCTIONS_2022,
   FilingStatus,
 } from "@/lib/tax-prep/types";
 
@@ -33,7 +35,7 @@ export default function ReviewPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [filingStatus, setFilingStatus] = useState<FilingStatus>("single");
-  const [taxYear, setTaxYear] = useState(2024);
+  const [taxYear, setTaxYear] = useState(2025);
 
   useEffect(() => {
     const taxReturn = getCurrentTaxReturn();
@@ -139,10 +141,14 @@ export default function ReviewPage() {
     // Deduction
     let deduct = 0;
     if (taxReturn.form1040.useStandardDeduction) {
-      if (taxYear === 2024) {
+      if (taxYear === 2025) {
+        deduct = STANDARD_DEDUCTIONS_2025[taxReturn.form1040.filingStatus];
+      } else if (taxYear === 2024) {
         deduct = STANDARD_DEDUCTIONS_2024[taxReturn.form1040.filingStatus];
       } else if (taxYear === 2023) {
         deduct = STANDARD_DEDUCTIONS_2023[taxReturn.form1040.filingStatus];
+      } else if (taxYear === 2022) {
+        deduct = STANDARD_DEDUCTIONS_2022[taxReturn.form1040.filingStatus];
       }
     } else if (taxReturn.form1040.itemizedDeductions) {
       const itemized = taxReturn.form1040.itemizedDeductions;
