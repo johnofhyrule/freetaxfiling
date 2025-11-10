@@ -140,12 +140,12 @@ export default function DownloadPage() {
           )}
         </div>
 
-        <div className="w-full">
+        <div style={{ width: '100%' }}>
           <h1 className="text-center text-3xl font-bold text-foreground">
             {pdfGenerated ? "PDF Ready!" : "Your Return is Complete"}
           </h1>
 
-          <p className="mx-auto mt-4 w-full max-w-2xl text-center text-lg text-gray-600">
+          <p style={{ width: '100%', maxWidth: '672px', margin: '1rem auto 0', textAlign: 'center', fontSize: '1.125rem', lineHeight: '1.75rem', color: '#4b5563' }}>
             {pdfGenerated
               ? "Your tax return PDF has been generated. You can download it again or print it."
               : "Generate your Form 1040 PDF to print and mail to the IRS."}
